@@ -1,7 +1,7 @@
 function Header() {
     return (
-      <header className="h-24 border border-slate-400 bg-gray-700 flex ">
-        <img className="w-40 self-center ml-6" src="./images/Logo.png"/>
+      <header className="flex h-24 bg-slate-900 max-w-56 ">
+        <img className="self-center w-32 m-auto" src="./images/Logo.png"/>
       </header>
     );
   }
