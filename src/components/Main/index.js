@@ -14,7 +14,7 @@ function Main() {
   console.log(contentSelection);
   
   return (
-    <div className="flex bg-slate-300 grow h-max">
+    <div className="flex h-full bg-slate-300">
       <Sidebar setContent={setContent}/>
 
       {contentSelection === 'home'

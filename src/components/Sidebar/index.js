@@ -3,7 +3,7 @@ import { useState } from "react";
 function Sidebar({setContent}) {
 
     return (
-      <div className="relative hidden pt-6 bg-gray-700 text-slate-400 grow max-w-60 md:block ">
+      <div className="relative hidden pt-6 bg-gray-700 text-slate-400 min-w-60 shrink-0 md:block ">
         <button type="button" name="home" onClick={setContent} className="flex items-center self-center w-10/12 pl-3 mx-auto mt-3 rounded-md hover:bg-slate-600 group" >
             <svg className="w-6 h-6 stroke-slate-400 group-hover:stroke-gray-200" viewBox="0 0 24 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M1 19H3.2M3.2 19H9.8M3.2 19V9.58512C3.2 8.99658 3.2 8.70216 3.27147 8.4283C3.3348 8.1856 3.43957 7.95593 3.58027 7.74839C3.73905 7.5142 3.9597 7.31999 4.40205 6.93244L9.6838 2.30489C10.5038 1.58643 10.9139 1.22718 11.3757 1.09043C11.7829 0.969855 12.2169 0.969855 12.6241 1.09043C13.0863 1.22728 13.4969 1.58687 14.3182 2.30642L19.5982 6.93244C20.0405 7.31998 20.2613 7.5142 20.42 7.74839C20.5607 7.95593 20.6647 8.1856 20.728 8.4283C20.7995 8.70216 20.8 8.99658 20.8 9.58512V19M9.8 19H14.2M9.8 19V14.5943C9.8 13.3777 10.785 12.3914 12 12.3914C13.215 12.3914 14.2 13.3777 14.2 14.5943V19M14.2 19H20.8M20.8 19H23" stroke="current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
