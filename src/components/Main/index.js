@@ -5,7 +5,7 @@ import TextToImage from "./TextToImage";
 import Hamburger from "../Form-Inputs/Hamburger";
 
 function Main() {
-  const [contentSelection, setContentSelection] = useState('text-to-image');
+  const [contentSelection, setContentSelection] = useState('home');
   const [showSidebar, setShowSidebar] = useState('true');
 
   const setContent = (event) => {
@@ -23,7 +23,7 @@ function Main() {
       
       <div className="flex flex-col w-full h-full">
 
-        <div className="fixed top-0 z-40 w-full min-h-24 bg-slate-300">
+        <div className="fixed top-0 z-40 w-full min-h-24 bg-slate-200">
           {showSidebar ? null : <Hamburger toggleSidebar={toggleSidebar} />}
         </div>
 

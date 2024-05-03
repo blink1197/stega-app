@@ -48,7 +48,7 @@ function TextToImageEmbed() {
                     </div>
                     <h1 className="pl-5 text-xl">Generate Stego Image</h1>
                 </div>
-                <div className="">
+                <div className="transition-transform ease-in-out hover:scale-105">
                     <Button buttonText={"Generate"}/>
                 </div>
                 
