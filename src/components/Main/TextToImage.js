@@ -5,7 +5,7 @@ import TextToImageEmbed from './TextToImageEmbed.js';
 
 function TextToImage() {
     return (
-      <div className="w-full h-full px-3 pb-3 overflow-y-auto pt-28">
+      <div className="w-full h-full px-3 pb-3 overflow-y-auto">
         <Tabs>
           <TabList>
             <Tab>
