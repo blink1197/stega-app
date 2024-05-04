@@ -1,13 +1,40 @@
+
 import FileDropZone from "../Form-Inputs/FileDropZone";
 import {useDropzone} from 'react-dropzone';
 import TextArea from "../Form-Inputs/TextArea";
 import TextInput from "../Form-Inputs/Textinput";
 import Button from "../Form-Inputs/Button";
+import { useEffect, useState } from "react";
 
 function TextToImageEmbed() {
-    const {acceptedFiles, getRootProps, getInputProps} = useDropzone();
+    const {acceptedFiles, getRootProps, getInputProps} = useDropzone(); // From File Drop Zone
+    const [imageFile, setImageFile] = useState(null);
+
+    useEffect(() => {
+        const handleImageChange = () => {
+            const file = acceptedFiles[0];
+            if (file && file.type.match('image.*')) {
+                const reader = new FileReader();
+                reader.onload = (readEvent) => {
+                    setImageFile(readEvent.target.result);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                setImageFile(null);
+            }
+        }
+        handleImageChange();
+    }, [acceptedFiles]);
+
+
+    const removeImage = () => {
+        setImageFile(null);
+    }
+    
+    console.log(acceptedFiles);
+    
     return (
-        <div className="TextToImageEmbed">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:grid-rows-2">
             <div className="mb-5 max-w-80">
                 <div className="flex items-center mb-3">
                     <div className="flex items-center justify-center border rounded-full h-9 w-9 border-slate-700">
@@ -15,8 +42,11 @@ function TextToImageEmbed() {
                     </div>
                     <h1 className="pl-5 text-xl">Upload an image</h1>
                 </div>
-                <div className="h-40">
-                    <FileDropZone getRootProps={getRootProps} getInputProps={getInputProps} acceptedFiles={acceptedFiles}/>
+                <div className="flex flex-col items-center h-48">
+                    {imageFile 
+                        ? <img className="w-auto h-48 mx-auto" src={imageFile}/>
+                        : <FileDropZone getRootProps={getRootProps} getInputProps={getInputProps} acceptedFiles={acceptedFiles}/>}
+                    {imageFile && <button onClick={removeImage} >Remove</button>}
                 </div>
             </div>
             <div className="mb-5 max-w-80">
@@ -27,7 +57,7 @@ function TextToImageEmbed() {
                     <h1 className="pl-5 text-xl">Input secret message</h1>
                 </div>
                 <div className="">
-                    <TextArea placeholder={"Type your secret message here..."}/>
+                    <TextArea rows={6} placeholder={"Type your secret message here..."}/>
                 </div>
             </div>
             <div className="mb-5 max-w-80">
