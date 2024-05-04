@@ -5,7 +5,7 @@ import TextToImageEmbed from './TextToImageEmbed.js';
 
 function TextToImage() {
     return (
-      <div className="w-full h-full px-3 pb-3 overflow-y-auto pt-28">
+      <div className="w-full h-full px-3 pb-3 overflow-y-auto">
         <Tabs>
           <TabList>
             <Tab>
@@ -29,13 +29,13 @@ function TextToImage() {
           </TabList>
 
           <TabPanel>
-            <div className='p-6 bg-white border border-black rounded-tr-lg rounded-bl-lg rounded-br-lg border-t-1'>
+            <div className='max-w-3xl p-6 bg-white border border-black rounded-tr-lg rounded-bl-lg rounded-br-lg border-t-1'>
               <TextToImageEmbed />
             </div>
             
           </TabPanel>
           <TabPanel>
-            <div className='p-6 bg-white border border-black rounded-tr-lg rounded-bl-lg rounded-br-lg border-t-1'>
+            <div className='max-w-3xl p-6 bg-white border border-black rounded-tr-lg rounded-bl-lg rounded-br-lg border-t-1'>
               <h2>Any content 2</h2>
             </div>
           </TabPanel>

@@ -11,9 +11,9 @@ rootDOM.style.height = '100vh';
 const root = ReactDOM.createRoot(rootDOM);
 
 root.render(
-  <React.StrictMode>
+
     <App />
-  </React.StrictMode>
+
 );
 
 reportWebVitals();
