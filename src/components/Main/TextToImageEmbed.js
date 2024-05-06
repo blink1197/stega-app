@@ -42,15 +42,6 @@ function TextToImageEmbed() {
         return binary;
     }
     
-    // const binaryToString = (binary) => {
-    //     let str = '';
-    //     for (let i = 0; i < binary.length; i += 8) {
-    //         let byte = binary.substr(i, 8);
-    //         str += String.fromCharCode(parseInt(byte, 2));
-    //     }
-    //     return str;
-    // }
-
     const stringToSeed = (str) => {
         let seed = 0;
         for (let i = 0; i < str.length; i++) {
@@ -74,7 +65,7 @@ function TextToImageEmbed() {
         let selectedNumbers = numbers.slice(0, selectedNums);
         return selectedNumbers;
     }
-
+    
     const calculateMaxMessageLength = (imageFile) => {
         const canvas = document.createElement('canvas');
         const image = new Image();
@@ -83,15 +74,19 @@ function TextToImageEmbed() {
             image.onload = function() {
                 canvas.width = image.width;
                 canvas.height = image.height;
-                const maximumMessageLength = canvas.width * canvas.height / 8;
-                console.log('here', maximumMessageLength); // Log the maximum message length here
+                const maximumMessageLength = ((canvas.width * canvas.height) / 8) * 0.01;
                 setMaxMessageLength(parseInt(maximumMessageLength));
             }
             image.src = event.target.result;
         }
-    
         imageFile && reader.readAsDataURL(imageFile);
     }
+
+    useEffect(() => {
+        calculateMaxMessageLength(imageFile);
+    }, [secretKey]);
+
+
 
     useEffect(() => {
         const handleImageChange = () => {
@@ -105,11 +100,10 @@ function TextToImageEmbed() {
             } else {
                 setImageSrc(null);
             }
-            setImageFile(acceptedFiles[0])
+            setImageFile(acceptedFiles[0]);
             calculateMaxMessageLength(acceptedFiles[0]);
         }
         handleImageChange();
-        console.log('max_message: ', maxMessageLength);
     }, [acceptedFiles]);
 
     
@@ -119,31 +113,101 @@ function TextToImageEmbed() {
         const ctx = canvas.getContext('2d');
         const image = new Image();
         const reader = new FileReader();
+        
         reader.onload = function(event) {
             image.onload = function() {
                 canvas.width = image.width;
                 canvas.height = image.height;
                 ctx.drawImage(image, 0, 0);
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const data = imageData.data;
-                const messageBinary = stringToBinary(secretMessage);
-                const selectedPixels = selectNumbers(data.length, messageBinary.length, secretKey)
-                for (let i = 0; i < selectedPixels.length; i++) {
-                    let pixel = selectedPixels[i];
-                
-                    if (messageBinary[i] === '1') {
-                        if (data[pixel] % 2 === 0) {
-                            data[pixel] += 1;
-                        }
-                    } else {
-                        if (data[pixel] % 2 === 1) {
-                            if (data[pixel] === 255) {
-                                data[pixel] -= 1;
-                            }
-                            data[pixel] += 1;
-                        }
-                    }
+                let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                const messageBinary = stringToBinary(secretMessage + secretKey);
+                console.log('message: ',messageBinary);
+                const selectedPixels = selectNumbers(imageData.data.length, messageBinary.length, secretKey);
+                 
+                let initialstring = '';
+                for (let pixel of selectedPixels) {
+                    initialstring += (imageData.data[pixel] % 2).toString();
                 }
+                console.log('initial: ', initialstring);
+
+                let initial = [];
+                for (let pixel of selectedPixels) {
+                    initial.push(imageData.data[pixel]).toString();
+                }
+                console.log('initial: ', initial);
+
+
+                for (let i = 0; i < selectedPixels.length; i++) {
+
+                    let pixelValue = imageData.data[selectedPixels[i]];
+                    let messageBit = messageBinary[i];
+
+                    if (messageBit === '1') {
+                        if (pixelValue % 2 === 0) {
+                            imageData.data[selectedPixels[i]] = pixelValue + 1;
+                        } else 
+                        imageData.data[selectedPixels[i]] = pixelValue;
+
+                    } else if (messageBit === '0') {
+                        if (pixelValue === 255) {
+                            imageData.data[selectedPixels[i]] = 254;
+                        } else if (pixelValue % 2 === 1) {
+                            imageData.data[selectedPixels[i]] = pixelValue + 1;
+                        } else {
+                            imageData.data[selectedPixels[i]] = pixelValue;
+                        }
+
+                    }
+                    
+                    // if (messageBit === '1' && pixelValue < 255) {
+                    //     pixelValue++; // Increment if message bit is 1 and value is less than 255
+                    // } else if (messageBit === '0' && pixelValue > 0) {
+                    //     pixelValue--; // Decrement if message bit is 0 and value is greater than 0
+                    // }
+                    
+                    // if (messageBit === '1') {
+                    //     pixelValue |= 1;
+                    // } else {
+                    //     pixelValue &= ~1;
+                    // }
+
+                    // for (let pixel of pixels) {
+                    //     if (messageBinaryStringArray[i] === '1') {
+                    //         if (data[pixel] % 2 === 0) {
+                    //             data_copy[pixel] = data[pixel] + 1;
+                    //         }
+                    //     } else {
+                    //         if (data[pixel] % 2 === 1) {
+                    //             if (data[pixel] === 255) {
+                    //                 data_copy[pixel] = data[pixel] - 1;
+                    //             }
+                    //             data_copy[pixel] = data[pixel] + 1;
+                    //         }
+                    //     }
+                    //     i++;
+                    //     console.log(data_copy[pixel]);
+                    // }
+                
+                    // imageData.data[selectedPixels[i]] = pixelValue; // Update the R value of the pixel
+                }
+
+                //console.log(imageData.data);
+                let finalstring = '';
+                for (let pixel of selectedPixels) {
+                    finalstring += (imageData.data[pixel] % 2).toString();
+                }
+                console.log('finalstring: ', finalstring);
+
+                
+                ctx.putImageData(imageData, 0, 0);
+
+                let final = [];
+                for (let pixel of selectedPixels) {
+                    final.push(imageData.data[pixel]).toString();
+                }
+                console.log('final: ', final);
+
                 exportImage(imageData);
             }
             image.src = event.target.result;
@@ -164,7 +228,7 @@ function TextToImageEmbed() {
         downloadLink.click();
         clearFormInputs();
     };
-    
+
     return (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:grid-rows-2">
             <div className="mb-5 max-w-80">

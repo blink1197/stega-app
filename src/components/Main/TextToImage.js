@@ -1,6 +1,7 @@
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import './react-tabs.css';
 import TextToImageEmbed from './TextToImageEmbed.js';
+import TextToImageExtract from './TextToImageExtract.js';
 
 
 function TextToImage() {
@@ -36,7 +37,7 @@ function TextToImage() {
           </TabPanel>
           <TabPanel>
             <div className='max-w-3xl p-6 bg-white border border-black rounded-tr-lg rounded-bl-lg rounded-br-lg border-t-1'>
-              <h2>Any content 2</h2>
+              <TextToImageExtract />
             </div>
           </TabPanel>
         </Tabs>
