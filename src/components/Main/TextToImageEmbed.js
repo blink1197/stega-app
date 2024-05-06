@@ -20,6 +20,13 @@ function TextToImageEmbed() {
         setImageFile(null);
     }
 
+    const clearFormInputs = () => {
+        setImageSrc(null);
+        setImageFile(null);
+        setSecretMessage("");
+        setSecretKey("");
+    }
+
     const handleInputChange = (event) => {
         const { name, value } = event.target;
         if (name === 'secret-message') setSecretMessage(value);
@@ -54,31 +61,24 @@ function TextToImageEmbed() {
 
     const selectNumbers = (totalNums, selectedNums, secretKey) => {
         const hash = sha256(secretKey).toString();
-        // Generate a numeric seed from the string using a hash function
         const numericSeed = stringToSeed(hash);
-        // Initialize the pseudo-random number generator with the numeric seed
         const rng = seedrandom(numericSeed);
-    
         let numbers = [];
         for (let i = 1; i <= totalNums; i++) {
             numbers.push(i);  
         }
-        // Shuffle the array using Fisher-Yates algorithm with the initialized PRNG
         for (let i = numbers.length - 1; i > 0; i--) {
             const j = Math.floor(rng() * (i + 1));
             [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
         }
-        // Select the first M numbers from the shuffled array
         let selectedNumbers = numbers.slice(0, selectedNums);
         return selectedNumbers;
     }
 
-    
     const calculateMaxMessageLength = (imageFile) => {
         const canvas = document.createElement('canvas');
         const image = new Image();
         const reader = new FileReader();
-    
         reader.onload = function(event) {
             image.onload = function() {
                 canvas.width = image.width;
@@ -100,7 +100,6 @@ function TextToImageEmbed() {
                 const reader = new FileReader();
                 reader.onload = (readEvent) => {
                     setImageSrc(readEvent.target.result);
-                    
                 };
                 reader.readAsDataURL(file);
             } else {
@@ -110,7 +109,6 @@ function TextToImageEmbed() {
             calculateMaxMessageLength(acceptedFiles[0]);
         }
         handleImageChange();
-        
         console.log('max_message: ', maxMessageLength);
     }, [acceptedFiles]);
 
@@ -119,21 +117,17 @@ function TextToImageEmbed() {
     const embedMessage = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-
         const image = new Image();
-
         const reader = new FileReader();
         reader.onload = function(event) {
             image.onload = function() {
                 canvas.width = image.width;
                 canvas.height = image.height;
                 ctx.drawImage(image, 0, 0);
-
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const data = imageData.data;
                 const messageBinary = stringToBinary(secretMessage);
                 const selectedPixels = selectNumbers(data.length, messageBinary.length, secretKey)
-
                 for (let i = 0; i < selectedPixels.length; i++) {
                     let pixel = selectedPixels[i];
                 
@@ -158,31 +152,17 @@ function TextToImageEmbed() {
     }
 
     const exportImage = (modifiedImageData) => {
-        // Create a new canvas element
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-    
-        // Set canvas dimensions
         canvas.width = modifiedImageData.width;
         canvas.height = modifiedImageData.height;
-    
-        // Put the modified pixel data onto the canvas
         ctx.putImageData(modifiedImageData, 0, 0);
-    
-        // Get the data URL representing the image (in PNG format)
         const dataURL = canvas.toDataURL(imageFile.type);
-    
-        // Create a link element
         const downloadLink = document.createElement('a');
-    
-        // Set the download attribute to the filename
         downloadLink.download = imageFile.name.split(".")[0] + "-embedded";
-    
-        // Set the href attribute to the data URL
         downloadLink.href = dataURL;
-    
-        // Simulate a click event on the link element to trigger the download
         downloadLink.click();
+        clearFormInputs();
     };
     
     return (
