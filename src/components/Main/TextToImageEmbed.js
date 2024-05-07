@@ -6,6 +6,9 @@ import Button from "../Form-Inputs/Button";
 import { useEffect, useState } from "react";
 import seedrandom from "seedrandom";
 import sha256 from 'crypto-js/sha256';
+import cv from "@techstark/opencv-js";
+
+window.cv = cv;
 
 function TextToImageEmbed() {
     const {acceptedFiles, getRootProps, getInputProps} = useDropzone(); // From File Drop Zone
@@ -50,21 +53,23 @@ function TextToImageEmbed() {
         return seed;
     }
 
-    const selectNumbers = (totalNums, selectedNums, secretKey) => {
+    const selectRandomPixels = (imageWidth, imageHeight, selectedNums, secretKey) => {
         const hash = sha256(secretKey).toString();
         const numericSeed = stringToSeed(hash);
         const rng = seedrandom(numericSeed);
-        let numbers = [];
-        for (let i = 1; i <= totalNums; i++) {
-            numbers.push(i);  
+        const totalPixels = imageWidth * imageHeight;
+        const selectedPixels = [];
+    
+        for (let i = 0; i < selectedNums; i++) {
+            // Generate random pixel coordinates
+            const randomPixelIndex = Math.floor(rng() * totalPixels);
+            const pixelX = randomPixelIndex % imageWidth;
+            const pixelY = Math.floor(randomPixelIndex / imageWidth);
+            // Add the pixel coordinates to the selected pixels array
+            selectedPixels.push({ x: pixelX, y: pixelY });
         }
-        for (let i = numbers.length - 1; i > 0; i--) {
-            const j = Math.floor(rng() * (i + 1));
-            [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
-        }
-        let selectedNumbers = numbers.slice(0, selectedNums);
-        return selectedNumbers;
-    }
+        return selectedPixels;
+    };
     
     const calculateMaxMessageLength = (imageFile) => {
         const canvas = document.createElement('canvas');
@@ -74,7 +79,7 @@ function TextToImageEmbed() {
             image.onload = function() {
                 canvas.width = image.width;
                 canvas.height = image.height;
-                const maximumMessageLength = ((canvas.width * canvas.height) / 8) * 0.01;
+                const maximumMessageLength = ((canvas.width * canvas.height) * 0.1);
                 setMaxMessageLength(parseInt(maximumMessageLength));
             }
             image.src = event.target.result;
@@ -85,8 +90,6 @@ function TextToImageEmbed() {
     useEffect(() => {
         calculateMaxMessageLength(imageFile);
     }, [secretKey]);
-
-
 
     useEffect(() => {
         const handleImageChange = () => {
@@ -106,129 +109,86 @@ function TextToImageEmbed() {
         handleImageChange();
     }, [acceptedFiles]);
 
-    
-
     const embedMessage = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const image = new Image();
         const reader = new FileReader();
-        
-        reader.onload = function(event) {
-            image.onload = function() {
-                canvas.width = image.width;
-                canvas.height = image.height;
-                ctx.drawImage(image, 0, 0);
-                let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-                const messageBinary = stringToBinary(secretMessage + secretKey);
-                console.log('message: ',messageBinary);
-                const selectedPixels = selectNumbers(imageData.data.length, messageBinary.length, secretKey);
-                 
-                let initialstring = '';
-                for (let pixel of selectedPixels) {
-                    initialstring += (imageData.data[pixel] % 2).toString();
-                }
-                console.log('initial: ', initialstring);
-
-                let initial = [];
-                for (let pixel of selectedPixels) {
-                    initial.push(imageData.data[pixel]).toString();
-                }
-                console.log('initial: ', initial);
-
-
-                for (let i = 0; i < selectedPixels.length; i++) {
-
-                    let pixelValue = imageData.data[selectedPixels[i]];
-                    let messageBit = messageBinary[i];
-
-                    if (messageBit === '1') {
-                        if (pixelValue % 2 === 0) {
-                            imageData.data[selectedPixels[i]] = pixelValue + 1;
-                        } else 
-                        imageData.data[selectedPixels[i]] = pixelValue;
-
-                    } else if (messageBit === '0') {
-                        if (pixelValue === 255) {
-                            imageData.data[selectedPixels[i]] = 254;
-                        } else if (pixelValue % 2 === 1) {
-                            imageData.data[selectedPixels[i]] = pixelValue + 1;
-                        } else {
-                            imageData.data[selectedPixels[i]] = pixelValue;
-                        }
-
-                    }
-                    
-                    // if (messageBit === '1' && pixelValue < 255) {
-                    //     pixelValue++; // Increment if message bit is 1 and value is less than 255
-                    // } else if (messageBit === '0' && pixelValue > 0) {
-                    //     pixelValue--; // Decrement if message bit is 0 and value is greater than 0
-                    // }
-                    
-                    // if (messageBit === '1') {
-                    //     pixelValue |= 1;
-                    // } else {
-                    //     pixelValue &= ~1;
-                    // }
-
-                    // for (let pixel of pixels) {
-                    //     if (messageBinaryStringArray[i] === '1') {
-                    //         if (data[pixel] % 2 === 0) {
-                    //             data_copy[pixel] = data[pixel] + 1;
-                    //         }
-                    //     } else {
-                    //         if (data[pixel] % 2 === 1) {
-                    //             if (data[pixel] === 255) {
-                    //                 data_copy[pixel] = data[pixel] - 1;
-                    //             }
-                    //             data_copy[pixel] = data[pixel] + 1;
-                    //         }
-                    //     }
-                    //     i++;
-                    //     console.log(data_copy[pixel]);
-                    // }
-                
-                    // imageData.data[selectedPixels[i]] = pixelValue; // Update the R value of the pixel
-                }
-
-                //console.log(imageData.data);
-                let finalstring = '';
-                for (let pixel of selectedPixels) {
-                    finalstring += (imageData.data[pixel] % 2).toString();
-                }
-                console.log('finalstring: ', finalstring);
-
-                
-                ctx.putImageData(imageData, 0, 0);
-
-                let final = [];
-                for (let pixel of selectedPixels) {
-                    final.push(imageData.data[pixel]).toString();
-                }
-                console.log('final: ', final);
-
-                exportImage(imageData);
-            }
-            image.src = event.target.result;
-        }
+        reader.onload = () => {
+            const imageDataUrl = reader.result; // Get the data URL of the uploaded image
+            manipulateImage(imageDataUrl); // Call a function to manipulate the image
+        };
         imageFile && reader.readAsDataURL(imageFile); 
     }
 
-    const exportImage = (modifiedImageData) => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = modifiedImageData.width;
-        canvas.height = modifiedImageData.height;
-        ctx.putImageData(modifiedImageData, 0, 0);
-        const dataURL = canvas.toDataURL(imageFile.type);
-        const downloadLink = document.createElement('a');
-        downloadLink.download = imageFile.name.split(".")[0] + "-embedded";
-        downloadLink.href = dataURL;
-        downloadLink.click();
-        clearFormInputs();
+    const manipulateImage = (imageDataUrl) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+    
+            // Convert secret message to binary
+            const messageBinary = stringToBinary(secretMessage + "----" + secretKey);
+            console.log(messageBinary);
+    
+            // Select random pixels
+            const selectedPixels = selectRandomPixels(canvas.width, canvas.height, messageBinary.length, secretKey);
+    
+            // Read the image into a cv.Mat object
+            const image = cv.imread(canvas);
+    
+            // Manipulate the selected pixels
+            
+            for (let i = 0; i < selectedPixels.length; i++) {
+                const pixelCoords = selectedPixels[i];
+                //const index = (pixelCoords.y * canvas.width + pixelCoords.x) * 4;
+                const index = pixelCoords.x * image.cols * image.channels() + pixelCoords.y * image.channels();
+    
+                // Retrieve RGBA values
+                let [r, g, b, a] = image.data.slice(index, index + 4);
+                
+    
+                // Modify the alpha channel based on the secret message
+                if (messageBinary[i] === '1') {
+                    if (a % 2 === 0) a += 1;
+                } else {
+                    if (a % 2 === 1) a -= 1;
+                }
+                
+                console.log(a);
+                // Set the modified RGBA values
+                image.data.set([r, g, b, a], index);
+                //console.log(image.ucharPtr(pixelCoords.x, pixelCoords.y)[3]);
+            }
+    
+            // Show the modified image
+            console.log(image);
+
+            let pixelValue = [];
+            for (const pixel of selectedPixels) {
+                pixelValue.push(image.ucharPtr(pixel.x, pixel.y)[3]);
+            }
+            console.log(pixelValue);
+
+            cv.imshow(canvas, image);
+
+            // Convert canvas to data URL
+            const modifiedImageDataUrl = canvas.toDataURL();
+    
+            // Create a download link and trigger the download
+            const fileName = "modified_image.png"; // You can change the filename and extension as needed
+            const downloadLink = document.createElement('a');
+            downloadLink.href = modifiedImageDataUrl;
+            downloadLink.download = fileName;
+            downloadLink.click();
+    
+            // Clean up
+            //image.delete();
+        };
+        img.src = imageDataUrl;
     };
 
+ 
     return (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:grid-rows-2">
             <div className="mb-5 max-w-80">

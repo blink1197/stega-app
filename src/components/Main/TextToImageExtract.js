@@ -6,14 +6,17 @@ import Button from "../Form-Inputs/Button";
 import { useEffect, useState } from "react";
 import seedrandom from "seedrandom";
 import sha256 from 'crypto-js/sha256';
+import cv from "@techstark/opencv-js";
 
-function TextToImageEmbed() {
+window.cv = cv;
+
+function TextToImageExtract() {
     const {acceptedFiles, getRootProps, getInputProps} = useDropzone(); // From File Drop Zone
     const [imageSrc, setImageSrc] = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const [secretMessage, setSecretMessage] = useState("");
     const [secretKey, setSecretKey] = useState("");
-    const [maxMessageLength, setMaxMessageLength] = useState(0);
+    const [maxMessageLength, setMaxMessageLength] = useState();
 
     const removeImage = () => {
         setImageSrc(null);
@@ -58,21 +61,23 @@ function TextToImageEmbed() {
         return seed;
     }
 
-    const selectNumbers = (totalNums, selectedNums, secretKey) => {
+    const selectRandomPixels = (imageWidth, imageHeight, selectedNums, secretKey) => {
         const hash = sha256(secretKey).toString();
         const numericSeed = stringToSeed(hash);
         const rng = seedrandom(numericSeed);
-        let numbers = [];
-        for (let i = 1; i <= totalNums; i++) {
-            numbers.push(i);  
+        const totalPixels = imageWidth * imageHeight;
+        const selectedPixels = [];
+    
+        for (let i = 0; i < selectedNums; i++) {
+            // Generate random pixel coordinates
+            const randomPixelIndex = Math.floor(rng() * totalPixels);
+            const pixelX = randomPixelIndex % imageWidth;
+            const pixelY = Math.floor(randomPixelIndex / imageWidth);
+            // Add the pixel coordinates to the selected pixels array
+            selectedPixels.push({ x: pixelX, y: pixelY });
         }
-        for (let i = numbers.length - 1; i > 0; i--) {
-            const j = Math.floor(rng() * (i + 1));
-            [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
-        }
-        let selectedNumbers = numbers.slice(0, selectedNums);
-        return selectedNumbers;
-    }
+        return selectedPixels;
+    };
 
     useEffect(() => {
         const handleImageChange = () => {
@@ -91,61 +96,57 @@ function TextToImageEmbed() {
         handleImageChange();
     }, [acceptedFiles]);
 
+
     const extractMessage = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const image = new Image();
         const reader = new FileReader();
-    
-        reader.onload = function(event) {
-            image.onload = function() {
-                canvas.width = image.width;
-                canvas.height = image.height;
-                ctx.drawImage(image, 0, 0);
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const maximumMessageLength = ((canvas.width * canvas.height) / 8) * 0.01;
-                setMaxMessageLength(parseInt(maximumMessageLength));
-                console.log(maxMessageLength);
-                const data = imageData.data;
-    
-                // Use the same parameters as in embedding
-                
-
-                const selectedPixels = selectNumbers(data.length, maxMessageLength, secretKey);
-                
-                let initials = '';
-                for (let pixel of selectedPixels) {
-                    initials += (imageData.data[pixel] % 2).toString();
-                }
-                console.log('initial: ', initials);
-
-                let messBin = [];
-                for (let pixel of selectedPixels) {
-                    messBin.push(imageData.data[pixel]).toString();
-                }
-                console.log('messBin: ', messBin);
-                
-                let binaryMessage = '';
-    
-                // Iterate over the selected pixels and extract message bits until secret key is found
-                // while (!binaryToString(binaryMessage).includes(secretKey)) {
-                for (let i = 0; i < selectedPixels.length; i++) {
-                    const pixelValue = data[selectedPixels[i]];
-                    // Extract the LSB from the pixel value
-                    const messageBit = (pixelValue % 2).toString();
-                    binaryMessage += messageBit;
-                }
-                // }
-                console.log(binaryToString(binaryMessage));
-                //console.log(binaryToString(binaryMessage).split(secretKey)[0]);
-                
-                // If the secret key is not found, handle it here
-                //console.log("Secret key not found or message not embedded.");
-            }
-            image.src = event.target.result;
-        }
+        reader.onload = () => {
+            const imageDataUrl = reader.result; // Get the data URL of the uploaded image
+            manipulateImage(imageDataUrl); // Call a function to manipulate the image
+        };
         imageFile && reader.readAsDataURL(imageFile); 
     }
+
+    const manipulateImage = (imageDataUrl) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+
+            setMaxMessageLength(canvas.width * canvas.height * 0.1);
+            const selectedPixels = selectRandomPixels(canvas.width, canvas.height, maxMessageLength, secretKey);
+            
+
+            const image = cv.imread(canvas);
+
+            let messageBinary = '';
+            
+            for (let i = 0; i < selectedPixels.length; i++) {
+                const pixelCoords = selectedPixels[i];
+                //const index = (pixelCoords.y * canvas.width + pixelCoords.x) * 4;
+                const index = pixelCoords.x * image.cols * image.channels() + pixelCoords.y * image.channels();
+                // Retrieve RGBA values
+                let [r, g, b, a] = image.data.slice(index, index + 4);
+                
+                if (a % 2 === 1) messageBinary += 1;
+                else if (a % 2 === 0) messageBinary += 0;
+            }
+
+            const messageString = binaryToString(messageBinary);
+            console.log(messageString);
+
+            if (messageString.includes(`----${secretKey}`)) {
+                setSecretMessage(messageString.split(`----${secretKey}`)[0]);
+            } else {
+                console.log('No message found, please check image or secret key');
+            }
+
+        };
+        img.src = imageDataUrl;
+    }
+
 
     return (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:grid-rows-2">
@@ -212,5 +213,5 @@ function TextToImageEmbed() {
     );
 }
   
-export default TextToImageEmbed;
+export default TextToImageExtract;
   
