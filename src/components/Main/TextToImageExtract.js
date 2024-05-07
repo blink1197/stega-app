@@ -10,13 +10,13 @@ import cv from "@techstark/opencv-js";
 
 window.cv = cv;
 
-function TextToImageEmbed() {
+function TextToImageExtract() {
     const {acceptedFiles, getRootProps, getInputProps} = useDropzone(); // From File Drop Zone
     const [imageSrc, setImageSrc] = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const [secretMessage, setSecretMessage] = useState("");
     const [secretKey, setSecretKey] = useState("");
-    const [maxMessageLength, setMaxMessageLength] = useState(0);
+    const [maxMessageLength, setMaxMessageLength] = useState();
 
     const removeImage = () => {
         setImageSrc(null);
@@ -32,7 +32,6 @@ function TextToImageEmbed() {
 
     const handleInputChange = (event) => {
         const { name, value } = event.target;
-        if (name === 'secret-message') setSecretMessage(value);
         if (name === 'secret-key') setSecretKey(value);
     }
 
@@ -45,6 +44,15 @@ function TextToImageEmbed() {
         return binary;
     }
     
+    const binaryToString = (binary) => {
+        let str = '';
+        for (let i = 0; i < binary.length; i += 8) {
+            let byte = binary.substr(i, 8);
+            str += String.fromCharCode(parseInt(byte, 2));
+        }
+        return str;
+    }
+
     const stringToSeed = (str) => {
         let seed = 0;
         for (let i = 0; i < str.length; i++) {
@@ -70,26 +78,6 @@ function TextToImageEmbed() {
         }
         return selectedPixels;
     };
-    
-    const calculateMaxMessageLength = (imageFile) => {
-        const canvas = document.createElement('canvas');
-        const image = new Image();
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            image.onload = function() {
-                canvas.width = image.width;
-                canvas.height = image.height;
-                const maximumMessageLength = ((canvas.width * canvas.height) * 0.1);
-                setMaxMessageLength(parseInt(maximumMessageLength));
-            }
-            image.src = event.target.result;
-        }
-        imageFile && reader.readAsDataURL(imageFile);
-    }
-
-    useEffect(() => {
-        calculateMaxMessageLength(imageFile);
-    }, [secretKey]);
 
     useEffect(() => {
         const handleImageChange = () => {
@@ -103,13 +91,13 @@ function TextToImageEmbed() {
             } else {
                 setImageSrc(null);
             }
-            setImageFile(acceptedFiles[0]);
-            calculateMaxMessageLength(acceptedFiles[0]);
+            setImageFile(acceptedFiles[0])
         }
         handleImageChange();
     }, [acceptedFiles]);
 
-    const embedMessage = () => {
+
+    const extractMessage = () => {
         const reader = new FileReader();
         reader.onload = () => {
             const imageDataUrl = reader.result; // Get the data URL of the uploaded image
@@ -126,69 +114,40 @@ function TextToImageEmbed() {
             canvas.height = img.height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-    
-            // Convert secret message to binary
-            const messageBinary = stringToBinary(secretMessage + "----" + secretKey);
-            console.log(messageBinary);
-    
-            // Select random pixels
-            const selectedPixels = selectRandomPixels(canvas.width, canvas.height, messageBinary.length, secretKey);
-    
-            // Read the image into a cv.Mat object
+
+            setMaxMessageLength(canvas.width * canvas.height * 0.1);
+            const selectedPixels = selectRandomPixels(canvas.width, canvas.height, maxMessageLength, secretKey);
+            
+
             const image = cv.imread(canvas);
-    
-            // Manipulate the selected pixels
+
+            let messageBinary = '';
             
             for (let i = 0; i < selectedPixels.length; i++) {
                 const pixelCoords = selectedPixels[i];
                 //const index = (pixelCoords.y * canvas.width + pixelCoords.x) * 4;
                 const index = pixelCoords.x * image.cols * image.channels() + pixelCoords.y * image.channels();
-    
                 // Retrieve RGBA values
                 let [r, g, b, a] = image.data.slice(index, index + 4);
                 
-    
-                // Modify the alpha channel based on the secret message
-                if (messageBinary[i] === '1') {
-                    if (a % 2 === 0) a += 1;
-                } else {
-                    if (a % 2 === 1) a -= 1;
-                }
-                
-                console.log(a);
-                // Set the modified RGBA values
-                image.data.set([r, g, b, a], index);
-                //console.log(image.ucharPtr(pixelCoords.x, pixelCoords.y)[3]);
+                if (a % 2 === 1) messageBinary += 1;
+                else if (a % 2 === 0) messageBinary += 0;
             }
-    
-            // Show the modified image
-            console.log(image);
 
-            let pixelValue = [];
-            for (const pixel of selectedPixels) {
-                pixelValue.push(image.ucharPtr(pixel.x, pixel.y)[3]);
+            const messageString = binaryToString(messageBinary);
+            console.log(messageString);
+
+            if (messageString.includes(`----${secretKey}`)) {
+                setSecretMessage(messageString.split(`----${secretKey}`)[0]);
+            } else {
+                console.log('No message found, please check image or secret key');
             }
-            console.log(pixelValue);
 
-            cv.imshow(canvas, image);
-
-            // Convert canvas to data URL
-            const modifiedImageDataUrl = canvas.toDataURL();
-    
-            // Create a download link and trigger the download
-            const fileName = "modified_image.png"; // You can change the filename and extension as needed
-            const downloadLink = document.createElement('a');
-            downloadLink.href = modifiedImageDataUrl;
-            downloadLink.download = fileName;
-            downloadLink.click();
-    
-            // Clean up
-            //image.delete();
         };
         img.src = imageDataUrl;
-    };
+    }
 
- 
+
     return (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:grid-rows-2">
             <div className="mb-5 max-w-80">
@@ -219,21 +178,6 @@ function TextToImageEmbed() {
                     <div className="flex items-center justify-center border rounded-full h-9 w-9 border-slate-700">
                         <h1 className="font-bold text-slate-700">2</h1>
                     </div>
-                    <h1 className="pl-5 text-xl">Input secret message</h1>
-                </div>
-                <div className="">
-                    <TextArea rows={6} placeholder={"Type your secret message here..."} onChange={handleInputChange} name={'secret-message'} value={secretMessage}/>
-                    <div className="flex justify-between pl-6 text-sm leading-tight text-[12px]">
-                        <p className="w-7/12">*Note: Bigger image dimensions means more characters that can be encoded</p>
-                        <p className="text-right">{maxMessageLength - secretMessage.length}/{maxMessageLength} <span className="block">characters</span></p>
-                    </div>
-                </div>
-            </div>
-            <div className="mb-5 max-w-80">
-                <div className="flex items-center mb-3">
-                    <div className="flex items-center justify-center border rounded-full h-9 w-9 border-slate-700">
-                        <h1 className="font-bold text-slate-700">3</h1>
-                    </div>
                     <h1 className="pl-5 text-xl">Input secret key</h1>
                 </div>
                 <div className="">
@@ -243,17 +187,31 @@ function TextToImageEmbed() {
             <div className="mb-5 max-w-80">
                 <div className="flex items-center mb-3">
                     <div className="flex items-center justify-center border rounded-full h-9 w-9 border-slate-700">
-                        <h1 className="font-bold text-slate-700">4</h1>
+                        <h1 className="font-bold text-slate-700">3</h1>
                     </div>
-                    <h1 className="pl-5 text-xl">Generate Stego Image</h1>
+                    <h1 className="pl-5 text-xl">Extract secret message</h1>
                 </div>
                 <div className="transition-transform ease-in-out hover:scale-105">
-                    <Button buttonText={"Generate"} onClick={embedMessage}/>
+                    <Button buttonText={"Extract"} onClick={extractMessage}/>
+                </div>
+            </div>
+            <div className="mb-5 max-w-80">
+                <div className="flex items-center mb-3">
+                    <div className="flex items-center justify-center border rounded-full h-9 w-9 border-slate-700">
+                        <h1 className="font-bold text-slate-700">4</h1>
+                    </div>
+                    <h1 className="pl-5 text-xl">Secret message</h1>
+                </div>
+                <div className="">
+                    <TextArea rows={6} placeholder={""} onChange={handleInputChange} name={'secret-message'} value={secretMessage} disabled={true}/>
+                    <div className="flex pl-6 text-sm leading-tight text-[12px] justify-end">
+                        <Button buttonText={"Copy Text"} size="sm"/>
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
   
-export default TextToImageEmbed;
+export default TextToImageExtract;
   
