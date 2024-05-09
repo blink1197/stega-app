@@ -7,14 +7,6 @@ import { useEffect, useState } from "react";
 import seedrandom from "seedrandom";
 import sha256 from 'crypto-js/sha256';
 import cv from "@techstark/opencv-js";
-import ExtendHammingCode from 'extended-hamming-code';
-
-const {
-  encode,
-  decode,
-} = ExtendHammingCode.setConfig({
-  pow: 6
-})
 
 window.cv = cv;
 
@@ -133,24 +125,20 @@ function TextToImageEmbed() {
             canvas.width = img.width;
             canvas.height = img.height;
             const ctx = canvas.getContext('2d');
-            ctx.globalAlpha = 1;
-            ctx.imageSmoothingEnabled = false;
             ctx.drawImage(img, 0, 0);
     
             // Convert secret message to binary
             const messageBinary = stringToBinary(secretMessage + "----" + secretKey);
-            const endodedMessage = encode(messageBinary);
             console.log(messageBinary);
     
             // Select random pixels
-            const selectedPixels = selectRandomPixels(canvas.width, canvas.height, endodedMessage.length, secretKey);
+            const selectedPixels = selectRandomPixels(canvas.width, canvas.height, messageBinary.length, secretKey);
     
             // Read the image into a cv.Mat object
-            const image = cv.imread(canvas, 1);
-            console.log(image.data);
+            const image = cv.imread(canvas);
     
             // Manipulate the selected pixels
-            let rvalues=[];
+            
             for (let i = 0; i < selectedPixels.length; i++) {
                 const pixelCoords = selectedPixels[i];
                 //const index = (pixelCoords.y * canvas.width + pixelCoords.x) * 4;
@@ -158,39 +146,40 @@ function TextToImageEmbed() {
     
                 // Retrieve RGBA values
                 let [r, g, b, a] = image.data.slice(index, index + 4);
-                //let [b, g, r] = image.data.slice(index, index + 3);
-
-  
+                
+    
                 // Modify the alpha channel based on the secret message
-                if (endodedMessage[i] === '1') {
-                    if (r % 2 === 0) r += 1;
+                if (messageBinary[i] === '1') {
+                    if (a % 2 === 0) a += 1;
                 } else {
-                    if (r % 2 === 1) r -= 1;
+                    if (a % 2 === 1) a -= 1;
                 }
                 
-                rvalues.push(r);
+                console.log(a);
                 // Set the modified RGBA values
                 image.data.set([r, g, b, a], index);
-                //image.data.set([b, g, r], index);
                 //console.log(image.ucharPtr(pixelCoords.x, pixelCoords.y)[3]);
             }
     
             // Show the modified image
-            console.log(rvalues);
-            console.log(image.data);
+            console.log(image);
 
+            let pixelValue = [];
+            for (const pixel of selectedPixels) {
+                pixelValue.push(image.ucharPtr(pixel.x, pixel.y)[3]);
+            }
+            console.log(pixelValue);
 
             cv.imshow(canvas, image);
 
             // Convert canvas to data URL
-            const modifiedImageDataUrl = canvas.toDataURL(imageFile.type, 1.0);
-            const fileName = imageFile.name;
+            const modifiedImageDataUrl = canvas.toDataURL();
     
             // Create a download link and trigger the download
-            
+            const fileName = "modified_image.png"; // You can change the filename and extension as needed
             const downloadLink = document.createElement('a');
             downloadLink.href = modifiedImageDataUrl;
-            downloadLink.download = `${fileName.split('.')[0]}-embedded.${fileName.split('.')[1]}`;
+            downloadLink.download = fileName;
             downloadLink.click();
     
             // Clean up

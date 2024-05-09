@@ -8,6 +8,7 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "crypto-js": "^4.2.0",
+    "extended-hamming-code": "^1.0.1",
     "jimp": "^0.22.12",
     "opencv-react": "^0.0.6",
     "react": "^18.3.1",

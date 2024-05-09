@@ -7,6 +7,14 @@ import { useEffect, useState } from "react";
 import seedrandom from "seedrandom";
 import sha256 from 'crypto-js/sha256';
 import cv from "@techstark/opencv-js";
+import ExtendHammingCode from 'extended-hamming-code';
+
+const {
+  encode,
+  decode,
+} = ExtendHammingCode.setConfig({
+  pow: 6
+})
 
 window.cv = cv;
 
@@ -113,35 +121,44 @@ function TextToImageExtract() {
             canvas.width = img.width;
             canvas.height = img.height;
             const ctx = canvas.getContext('2d');
+            ctx.globalAlpha = 1;
+            ctx.imageSmoothingEnabled = false;
             ctx.drawImage(img, 0, 0);
+
 
             setMaxMessageLength(canvas.width * canvas.height * 0.1);
             const selectedPixels = selectRandomPixels(canvas.width, canvas.height, maxMessageLength, secretKey);
             
 
-            const image = cv.imread(canvas);
+            const image = cv.imread(canvas, 1);
+            console.log('cvimread',image.data);
 
             let messageBinary = '';
+            let rvalues=[];
             
             for (let i = 0; i < selectedPixels.length; i++) {
                 const pixelCoords = selectedPixels[i];
                 //const index = (pixelCoords.y * canvas.width + pixelCoords.x) * 4;
-                const index = pixelCoords.x * image.cols * image.channels() + pixelCoords.y * image.channels();
+                const index = pixelCoords.y * image.cols * image.channels() + pixelCoords.x * image.channels();
                 // Retrieve RGBA values
                 let [r, g, b, a] = image.data.slice(index, index + 4);
+                //let [b, g, r] = image.data.slice(index, index + 3);
                 
-                if (a % 2 === 1) messageBinary += 1;
-                else if (a % 2 === 0) messageBinary += 0;
+                if (r % 2 === 1) messageBinary += 1;
+                else if (r % 2 === 0) messageBinary += 0;
+                rvalues.push(r);
             }
+            console.log(rvalues);
 
-            const messageString = binaryToString(messageBinary);
-            console.log(messageString);
+            //const messageString = binaryToString(messageBinary);
+            const decodedMessage = decode(messageBinary);
+            console.log(binaryToString(decodedMessage.code));
 
-            if (messageString.includes(`----${secretKey}`)) {
-                setSecretMessage(messageString.split(`----${secretKey}`)[0]);
-            } else {
-                console.log('No message found, please check image or secret key');
-            }
+            // if (messageString.includes(`----${secretKey}`)) {
+            //     setSecretMessage(messageString.split(`----${secretKey}`)[0]);
+            // } else {
+            //     console.log('No message found, please check image or secret key');
+            // }
 
         };
         img.src = imageDataUrl;
