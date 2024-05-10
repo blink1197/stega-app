@@ -24,7 +24,8 @@ function Main() {
   const toggleSidebarMobile = () => {
     if (windowSize.width <= 768) {
       setShowSidebar(false);
-    } 
+    }
+
   }
 
   
@@ -42,16 +43,16 @@ function Main() {
 
 
   return (
-    <div className="flex h-full bg-slate-300">
+    <div className="flex h-full bg-slate-300 realative">
       {showSidebar ? <Sidebar setContent={setContent} toggleSidebar={toggleSidebar}/> : null}
       
-      <div className="flex flex-col w-full h-full">
+      <div className="flex flex-col w-full h-full ">
 
-        <div className="fixed top-0 z-40 w-full min-h-24 bg-slate-200 opacity-90">
+        <div className="fixed top-0 z-40 w-full min-h-24 bg-slate-200 opacity-90 lg:relative">
           {showSidebar ? null : <Hamburger toggleSidebar={toggleSidebar} />}
         </div>
         
-        <div className="grow pt-28 bg-slate-300" onClick={toggleSidebarMobile}>
+        <div className="grow pt-28 bg-slate-300 lg:pt-10" onClick={toggleSidebarMobile}>
           {contentSelection === 'home'
           ? <HomeContent />
           : contentSelection === 'text-to-image'
