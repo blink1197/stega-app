@@ -135,7 +135,6 @@ function TextToImageExtract() {
             }
 
             const messageString = binaryToString(messageBinary);
-            console.log(messageString);
 
             if (messageString.includes(`----${secretKey}`)) {
                 setSecretMessage(messageString.split(`----${secretKey}`)[0]);
