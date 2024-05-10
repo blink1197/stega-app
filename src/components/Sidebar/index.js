@@ -3,11 +3,11 @@ function Sidebar({setContent, toggleSidebar}) {
         <div className={"fixed z-50 md:relative bg-gray-700 text-slate-400 min-w-60 shrink-0 md:block h-full"}>
             <div className="relative flex h-24 bg-slate-900 max-w-60 grow">
                 <img className="self-center w-32 m-auto" src="./images/Logo.png"/>
-                <button onClick={toggleSidebar} type="button" className="absolute border border-slate-700 p-2 rounded-full bg-slate-400 bottom-[-0.75rem] right-[-0.75rem] md:hidden">
+                {/* <button onClick={toggleSidebar} type="button" className="absolute border border-slate-700 p-2 rounded-full bg-slate-400 bottom-[-0.75rem] right-[-0.75rem] md:hidden">
                     <svg className="w-3 h-3" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M19 19L10 10M10 10L1 1M10 10L19.0001 1M10 10L1 19.0001" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                </button>
+                </button> */}
             </div>
             <button type="button" name="home" onClick={setContent} className="flex items-center self-center w-10/12 pl-3 mx-auto mt-3 rounded-md hover:bg-slate-600 group" >
                 <svg className="w-6 h-6 stroke-slate-400 group-hover:stroke-gray-200" viewBox="0 0 24 20" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -129,7 +129,7 @@ function TextToImageEmbed() {
     
             // Convert secret message to binary
             const messageBinary = stringToBinary(secretMessage + "----" + secretKey);
-            console.log(messageBinary);
+
     
             // Select random pixels
             const selectedPixels = selectRandomPixels(canvas.width, canvas.height, messageBinary.length, secretKey);
@@ -155,20 +155,17 @@ function TextToImageEmbed() {
                     if (a % 2 === 1) a -= 1;
                 }
                 
-                console.log(a);
+ 
                 // Set the modified RGBA values
                 image.data.set([r, g, b, a], index);
-                //console.log(image.ucharPtr(pixelCoords.x, pixelCoords.y)[3]);
+
             }
     
-            // Show the modified image
-            console.log(image);
-
             let pixelValue = [];
             for (const pixel of selectedPixels) {
                 pixelValue.push(image.ucharPtr(pixel.x, pixel.y)[3]);
             }
-            console.log(pixelValue);
+
 
             cv.imshow(canvas, image);
 

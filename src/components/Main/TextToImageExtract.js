@@ -135,12 +135,11 @@ function TextToImageExtract() {
             }
 
             const messageString = binaryToString(messageBinary);
-            console.log(messageString);
 
             if (messageString.includes(`----${secretKey}`)) {
                 setSecretMessage(messageString.split(`----${secretKey}`)[0]);
             } else {
-                console.log('No message found, please check image or secret key');
+                setSecretMessage('No message found, please check image or secret key');
             }
 
         };
