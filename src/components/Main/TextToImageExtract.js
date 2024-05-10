@@ -126,7 +126,7 @@ function TextToImageExtract() {
             for (let i = 0; i < selectedPixels.length; i++) {
                 const pixelCoords = selectedPixels[i];
                 //const index = (pixelCoords.y * canvas.width + pixelCoords.x) * 4;
-                const index = pixelCoords.x * image.cols * image.channels() + pixelCoords.y * image.channels();
+                const index = pixelCoords.y * image.cols * image.channels() + pixelCoords.x * image.channels();
                 // Retrieve RGBA values
                 let [r, g, b, a] = image.data.slice(index, index + 4);
                 

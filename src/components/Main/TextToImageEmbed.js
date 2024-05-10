@@ -112,78 +112,67 @@ function TextToImageEmbed() {
     const embedMessage = () => {
         const reader = new FileReader();
         reader.onload = () => {
-            const imageDataUrl = reader.result; // Get the data URL of the uploaded image
-            manipulateImage(imageDataUrl); // Call a function to manipulate the image
+            const imageDataUrl = reader.result; 
+            manipulateImage(imageDataUrl); 
         };
         imageFile && reader.readAsDataURL(imageFile); 
     }
 
-    const manipulateImage = (imageDataUrl) => {
+    const manipulateImage = (imageDataUrl, ) => {
+        //console.log(imageFile);
         const img = new Image();
         img.onload = () => {
             const canvas = document.createElement('canvas');
             canvas.width = img.width;
             canvas.height = img.height;
             const ctx = canvas.getContext('2d');
+            //ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+            //ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0);
-    
-            // Convert secret message to binary
+ 
             const messageBinary = stringToBinary(secretMessage + "----" + secretKey);
-            console.log(messageBinary);
-    
-            // Select random pixels
             const selectedPixels = selectRandomPixels(canvas.width, canvas.height, messageBinary.length, secretKey);
-    
-            // Read the image into a cv.Mat object
-            const image = cv.imread(canvas);
-    
-            // Manipulate the selected pixels
             
-            for (let i = 0; i < selectedPixels.length; i++) {
-                const pixelCoords = selectedPixels[i];
-                //const index = (pixelCoords.y * canvas.width + pixelCoords.x) * 4;
-                const index = pixelCoords.x * image.cols * image.channels() + pixelCoords.y * image.channels();
-    
-                // Retrieve RGBA values
-                let [r, g, b, a] = image.data.slice(index, index + 4);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            console.log(imageData);
+
+            ctx.putImageData(imageData, 0, 0);
+            //console.log(ctx.getImageData(0, 0, 1, 1).data); 
+
+            
+            // const image = cv.imread(canvas);
+            // console.log(image);
+
+            
+            // for (let i = 0; i < selectedPixels.length; i++) {
                 
-    
-                // Modify the alpha channel based on the secret message
-                if (messageBinary[i] === '1') {
-                    if (a % 2 === 0) a += 1;
-                } else {
-                    if (a % 2 === 1) a -= 1;
-                }
+            //     const { x, y } = selectedPixels[i];
+            //     const { cols } = image;
+            //     const index = (y * cols + x) * image.channels();
                 
-                console.log(a);
-                // Set the modified RGBA values
-                image.data.set([r, g, b, a], index);
-                //console.log(image.ucharPtr(pixelCoords.x, pixelCoords.y)[3]);
-            }
+            //     let [r, g, b, a] = image.data.slice(index, index + 4);
+                
+
+            //     if (messageBinary[i] === '1') {
+            //         if (a % 2 === 0) a -= 1;
+            //         if (a === 0) a += 1;
+            //     } else {
+            //         if (a % 2 === 1) a -= 1;
+            //     }
+
+            //     image.data.set([r, g, b, a], index);
+            // }
     
-            // Show the modified image
-            console.log(image);
-
-            let pixelValue = [];
-            for (const pixel of selectedPixels) {
-                pixelValue.push(image.ucharPtr(pixel.x, pixel.y)[3]);
-            }
-            console.log(pixelValue);
-
-            cv.imshow(canvas, image);
-
-            // Convert canvas to data URL
-            const modifiedImageDataUrl = canvas.toDataURL();
-    
-            // Create a download link and trigger the download
-            const fileName = "modified_image.png"; // You can change the filename and extension as needed
+            // cv.imshow(canvas, image);
+            
+            const modifiedImageDataUrl = canvas.toDataURL(imageFile.type, 1.0);
             const downloadLink = document.createElement('a');
             downloadLink.href = modifiedImageDataUrl;
-            downloadLink.download = fileName;
+            downloadLink.download = `${imageFile.name.split(".")[0]}-embedded.${imageFile.name.split(".")[1]}`;
             downloadLink.click();
     
-            // Clean up
-            //image.delete();
+            // image.delete();
         };
         img.src = imageDataUrl;
     };
