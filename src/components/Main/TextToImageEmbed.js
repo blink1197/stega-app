@@ -176,10 +176,10 @@ function TextToImageEmbed() {
             const modifiedImageDataUrl = canvas.toDataURL();
     
             // Create a download link and trigger the download
-            const fileName = "modified_image.png"; // You can change the filename and extension as needed
+            const fileName = imageFile.name.split('.'); // You can change the filename and extension as needed
             const downloadLink = document.createElement('a');
             downloadLink.href = modifiedImageDataUrl;
-            downloadLink.download = fileName;
+            downloadLink.download = `${fileName[0]}-embedded.${fileName[1]}`;
             downloadLink.click();
     
             // Clean up
